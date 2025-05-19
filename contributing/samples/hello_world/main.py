@@ -84,18 +84,16 @@ async def main():
   await run_prompt(session_11, 'Hi') # Puedes mantener esto o comentarlo si quieres que el usuario empiece
 
   while True:
-      try:
-          user_input = input("User: ")
-      except KeyboardInterrupt: # Permite salir con Ctrl+C
-          print("\nExiting by user request (Ctrl+C).")
-          break
-      if user_input.lower() == 'exit':
-          print("Exiting.")
-          break
-      if not user_input.strip(): # Omitir entradas vacías o solo espacios
-          continue
+    try:
+        user_input = input("User: ")
+    except KeyboardInterrupt:
+        print("\nSaliendo por petición del usuario (Ctrl+C).")
+        break
+    except EOFError:
+        print("\nFin de la entrada detectado. Saliendo.")
+        break 
       
-      await run_prompt(session_11, user_input)
+    await run_prompt(session_11, user_input)
 
 
 #   start_time = time.time()
