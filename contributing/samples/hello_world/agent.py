@@ -35,6 +35,7 @@ def roll_die(sides: int, tool_context: ToolContext) -> int:
     tool_context.state['rolls'] = []
 
   tool_context.state['rolls'] = tool_context.state['rolls'] + [result]
+  print(f"[ HERRAMIENTA roll_die ] Llamada con sides={sides}. Devolviendo: {result}")
   return result
 
 
@@ -59,11 +60,14 @@ async def check_prime(nums: list[int]) -> str:
         break
     if is_prime:
       primes.add(number)
-  return (
-      'No prime numbers found.'
-      if not primes
-      else f"{', '.join(str(num) for num in primes)} are prime numbers."
-  )
+  resultado_string = (
+    'No prime numbers found.'
+    if not primes
+    else f"{', '.join(str(num) for num in primes)} are prime numbers."
+)
+  print(f"[ HERRAMIENTA check_prime ] Llamada con nums={nums}. Devolviendo: \"{resultado_string}\"")
+  return resultado_string
+
 
 root_agent = Agent(
     model='gemini-2.0-flash',
@@ -73,22 +77,28 @@ root_agent = Agent(
         ' numbers.'
     ),
     instruction="""
-      You roll dice and answer questions about the outcome of the dice rolls.
-      You can roll dice of different sizes.
-      You can use multiple tools in parallel by calling functions in parallel(in one request and in one round).
-      It is ok to discuss previous dice roles, and comment on the dice rolls.
-      When you are asked to roll a die, you must call the roll_die tool with the number of sides. Be sure to pass in an integer. Do not pass in a string.
-      You should never roll a die on your own.
-      When checking prime numbers, call the check_prime tool with a list of integers. Be sure to pass in a list of integers. You should never pass in a string.
-      You should not check prime numbers before calling the tool.
-      When you are asked to roll a die and check prime numbers, you should always make the following two function calls:
-      1. You should first call the roll_die tool to get a roll. Wait for the function response before calling the check_prime tool.
-      2. After you get the function response from roll_die tool, you should call the check_prime tool with the roll_die result.
-        2.1 If user asks you to check primes based on previous rolls, make sure you include the previous rolls in the list.
-      3. When you respond, you must include the roll_die result from step 1.
-      You should always perform the previous 3 steps when asking for a roll and checking prime numbers.
-      You should not rely on the previous history on prime results.
-    """,
+  You roll dice and answer questions about the outcome of the dice rolls.
+  You can roll dice of different sizes.
+  You can use multiple tools in parallel by calling functions in parallel(in one request and in one round).
+  It is ok to discuss previous dice roles, and comment on the dice rolls.
+
+  When you are asked to roll a die:
+  1. You MUST call the roll_die tool with the number of sides. Be sure to pass in an integer. Do not pass in a string.
+  2. After you get the function response from the roll_die tool, you MUST inform the user of the number rolled.
+  3. Then, you MUST ask the user if they want to check if this rolled number is prime.
+
+  If the user responds affirmatively (e.g., "yes", "ok", "sure", "please do") to your question about checking if the number is prime:
+  1. You MUST then call the check_prime tool. Use the most recently rolled number if no specific number is mentioned by the user.
+  2. If the user asks to check previous rolls, include all previously rolled numbers (from the current session) in the list for the check_prime tool.
+  3. After getting the result from check_prime, inform the user.
+
+  If the user responds negatively (e.g., "no", "not now") to your question about checking if the number is prime:
+  1. Acknowledge their response (e.g., "Okay", "Alright").
+  2. Wait for further instructions or questions from the user. Do NOT call check_prime.
+
+  You should never roll a die or check prime numbers on your own initiative without being asked or confirming with the user as described above.
+  When you respond after a die roll, you must always include the roll_die result from that turn if a roll was made.
+""",
     tools=[
         roll_die,
         check_prime,
